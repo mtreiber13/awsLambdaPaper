@@ -1,0 +1,256 @@
+<!DOCTYPE HTML>
+
+<html lang="en"> 
+
+<head>
+	<link id="pagestyle" href="default.css" rel="stylesheet" type="text/css" />
+	<title>Serverless Web Applications</title>
+	<meta charset="utf-8"/>
+</head>
+
+<body>
+	<div id="author">
+		<p>
+			Matt Treiber<br>
+			matthew.treiber@tufts.edu<br>
+			mtreib01
+		</p>		
+	</div>
+
+	<h1>An Analysis of using Serverless Architectures (AWS Lambda) to Build Web Applications</h1>
+
+	<div id="toc">
+		<h2>Table of Contents</h2>
+		<ul class="toc_list">
+			<li>
+				<a href="#intro">Introduction</a>
+			</li>
+			<li>
+				<a href="#webApps">Applications on the Web</a>
+				<ul>
+				    <li>
+				    	<a href="#cloud">Building Web Applications on the Cloud</a>
+				    </li>
+				    <li>
+				    	<a href="#technologies">Explanation of Technologies</a>
+				    </li>
+  				</ul>
+			</li>
+			<li>
+				<a href="#analysis">Analysis using AWS Lambda for Web Applications</a>
+				<ul>
+				    <li>
+				    	<a href="#kiss">KISS</a>
+				    </li>
+				    <li>
+				    	<a href="#sss">Simplicity Supports Scalability</a>
+				    </li>
+				    <li>
+				    	<a href="#state">Stateless Nature</a>
+				    </li>
+				    <li>
+				    	<a href="#soc">Modularity, Layering, Separation of Concerns</a>
+				    </li>
+				    <li>
+				    	<a href="#evolve">Evolution</a>
+				    </li>
+  				</ul>
+			</li>
+			<li>
+				<a href="#conclusion">Closing Remarks</a>
+				<ul>
+				    <li>
+				    	<a href="#takeways">Key Takeaways</a>
+				    </li>
+				    <li>
+				    	<a href="#opinion">My Thoughts on AWS Lambda</a>
+				    </li>
+  				</ul>
+			</li>
+			<li>
+				<a href="#sources">Bibliography</a>
+			</li>
+		</ul>
+	</div>
+
+	<div id="content">
+		<div id="intro">
+			<h2>Introduction</h2>
+			<p class="words">
+				When building a Web application on the Cloud, there is a wide range of services that provide differing functionalities and architectures to developers. In recent years, Web applications built on the Cloud have typically been deployed in containers that persist on servers. This approach is centralized in the sense that everything an application needs is installed and running on a server. However, as a result of the recent advancements in cloud computing, a new technology called serverless computing has proven to be a valid, alternate architecture to the standard containerized approach. At face value, serverless computing has an obvious economic advantage: it charges developers for execution time rather than the time the application is deployed. More often than not, this architecture costs less than building your own server or paying fixed costs to use a server. The goal of this paper is to discuss the technical trade-offs between serverless computing and traditional container-based computation. We will first generally discuss Web applications built on the cloud. Then we will discuss container-based and serverless technologies and how they differ. Then we will analyze the trade-offs between the two technologies through a case study of AWS Lambda. After discussing the trade-offs, we will conclude by restating the key trade-offs and I provide my personal thoughts on using AWS Lambda to build Web applications. 
+			</p>
+		</div>
+		<div id="webApps">
+			<h2>Applications on the Web</h2>
+			<p class="words">
+				When Tim Burners-Lee invented the Web, he did not intend for its main use to be applications. According to Raman and Malhotra, “the Web has evolved from a Web of documents to a Web of applications” (Raman and Malhotra, Identifying Application State) thus it is important to understand how these applications differ from documents and how they are built. As noted in <cite>From Documents to Applications</cite>, “Documents don’t do anything” (Mendelsohn, From Documents to Applications) while applications give users the ability to do almost anything. JavaScript is widely used for Web applications and it is a Turing-complete language. This is an important fact because with the use of JavaScript the Web has the ability to do anything that can be done by a language like C (within the obvious constraints of Web browsers and Internet connectivity). 
+			</p>
+			<p class="words">
+				In recent years, cloud computing has become almost synonymous with Web applications. AWS defines cloud computing as “the on-demand delivery of IT resources over the Internet... Instead of buying, owning, and maintaining physical data centers and servers, you can access technology services, such as computing power, storage, and databases, on an as-needed basis from a cloud provider” (“What is Cloud Computing?”). Cloud computing provides resources that make it possible to do the complex computations for which many Web applications rely on remote machines. There are many cloud services available but choosing which is best for an application is challenging. 
+			</p>
+			<div id="cloud">
+				<h3>Building Web Applications on the Cloud</h3>
+				<p class="words">
+					Choosing the correct cloud service provider is essential to designing a great Web application. There exist three major cloud service providers: Amazon Web Services (AWS), Microsoft Azure, and Google Cloud Platform (GCP). Each provider offers similar services but all possess some unique strengths. AWS offers the widest “breadth and depth of its services, with more than 175 across compute, storage, database, analytics, networking, mobile, developer tools, management tools, IoT, security and enterprise applications,” (Carey, “AWS vs Azure vs Google Cloud…”). Microsoft Azure has powerful integration with tools like <a href=”https://www.office.com/”>Office 365</a> and <a href=”https://www.microsoft.com/en-us/microsoft-365/microsoft-teams/group-chat-software”>Teams</a>, making it a great choice for businesses already familiar with Microsoft technologies. GCP stands out for its “expertise around open source technologies, especially containers” and its established commitment to innovation (Carey, “AWS vs Azure vs Google Cloud”). At the birth of a system, this decision may seem trivial but it can affect how a system evolves over time [4]. It is paramout that the strengths and weaknesses of each cloud service provider is considered during the design process.
+				</p>
+				<p class="words">
+					There is an ongoing debate in the Web community when it comes to container-based and serverless computing because they can solve similar challenges. These two technologies are fundamentally different and create distinct trade-offs for the system. Similarly to choosing the correct cloud service provider, the correct architecture will create advantages and disadvantages that affect the development and evolution of a system. A general rule of thumb, provided by a developer at Serveless, Inc., is that container-based architecture is a better choice when “you need flexibility, or when you need to migrate legacy services” and serverless architecture is advantageous when “you need speed of development, automatic scaling and significantly lowered runtime costs” (M&uuml;ns, “Serverless (FaaS) vs. Containers…”). 
+				</p>
+			</div>
+			<div id="technologies">
+				<h3>Explanation of Technologies</h3>
+				<p class="words">
+					Now that we understand what a Web application is, what it can do, and how cloud computing fits into the picture, let’s discuss how these applications are built. Web applications on the cloud have historically been built on container-based architecture. Container-based deployment (or containerization) is “an Operating System level virtualization method for deploying and running distributed applications without launching Virtual Machines for each application” (Iorio, “Container based Architectures”). This approach allows Web applications to run remotely and have everything needed to function in one place. 
+				</p>
+				<p class="words">
+					On the other hand, “serverless computing is a method of providing backend services on an as-used basis” (What Is Serverless Computing?). The name is misleading because it does, in fact, use servers. It is referred to as "serverless" because the developers using the technology do not need to understand the underlying infrastructure of the servers and operating systems. The complex inner-workings of the cloud are abstracted away from the developer who now only needs to write and deploy code to run on it. Before proceeding, it is important to note that AWS Lambda can be further categorized as a Function-as-a-Service (FaaS). FaaS is “an event-driven computing execution model that runs in stateless containers" (What is FaaS?) and is one of the many technologies that fall under the umbrella of serverless computing. Serverless computing, in general, provides “processing power when your application is in need of it and responds to data" (Melo, “What Is Function as a Service?”).
+				</p>
+				<p class="words">
+					So, how does it work? In AWS Lambba’s case, when processing power is needed by an application, AWS places the function and its dependencies into a container that “executes on a multi-tenant cluster of machines” (AWS Lambda - The Ultimate Guide). In other words, when a Lambda function is triggered, AWS finds a cluster (group of servers) with sufficient resources that is shared between tenants (developers, companies, applications, etc.) and executes the code. The inner-workings of this service are certainly complicated but the abstraction of the cloud provided to developers is simple.
+				</p>
+			</div>
+		</div>
+		<div id="analysis">
+			<h2>Analysis of using AWS Lambda for Web Applications</h2>
+			<p class="words">
+				Now that we understand the difference between container-based and serverless computing, let's begin our analysis of using the AWS Lambda serverless technology to build Web applications. In the subsequent analysis I will consider key principles of general and distributed software design and discuss the trade-offs of using AWS Lambda in relation to each of them. <cite>For the sake of this discussion we will assume that the applications are intended for millions of users worldwide.</cite>
+			</p>
+			<div id="kiss">
+				<h3>KISS</h3>
+				<p class="words">
+					An overarching theme in designing good software is simplicity. As previously stated, serverless technology has gained popularity due to its simplicity and this fact should not be overlooked! The KISS principle should be considered when designing any system, especially highly distributed ones. KISS refers to the acronym “keep it simple stupid”, which is credited to Kelly Johnson [11]. This acronym reminds designers that the simplest approach to solving a problem is often the best and to avoid adding complexity [12]. Through the use of AWS Lambda, a complex Web application can maintain simplicity by removing the need to build, maintain, and upkeep servers. Instead of the infrastructure of the cloud itself and nuances of a container, the code written by a developer to run on the cloud becomes the most complex aspect of the system. The benefits of this simplicity will be a recurring theme in subsequent sections.
+				</p>
+			</div>
+			<div id="sss">
+				<h3>Simplicity Supports Scalability</h3>
+				<p class="words">
+					A direct result of AWS Lambda’s simplicity is its ability to scale automatically. Scalability is defined as the “ability to increase or decrease IT resources as needed to meet changing demand” (“Cloud Scalability”). Lambda functions scale automatically because they are not bound to a single server. As explained earlier, when a function is triggered, AWS finds a cluster with the necessary resources to execute it. As the demand for the execution of a given function changes, AWS simply finds the necessary space in the same, or different, cluster to execute each instance of the call. This differs from traditional container-based computing because if demand for a given task increases to a level that requires more resources than a server can provide, the application running the task cannot effectively scale to meet the demand without manually creating another instance of the application on a server. On the other hand, if for some reason, the function receives abnormally low invocations, server space (and money) is not wasted on idleness.
+				</p>
+				<p class="words">
+					The concepts of (1) abstracting the complexity of cloud infrastructure and (2) serverless computing being able to scale automatically work in tandem to support the distributed systems principle that simplicity supports scalability. Although the underlying logic of finding the resources suitable for a Lambda function to execute is quite complex, the abstraction for the developer is simple. Combining the simplicity of use with the ability to scale automatically, the service can dynamically grow with the application itself. If this sounds too good to be true, that is because it is. While there are various limitations, the most obvious trade-off of using AWS Lambda, and serverless computing in general, is that developers lose some observability and control of their application. By relying on a serverless provider, developers give up the ability to see and control 100% of an application’s functionality. This makes debugging and optimization to be much harder and puts the application at the mercy of the provider. AWS has been known to be quite reliable, but what if the Lambda service malfunctions or goes down? This observability is important to any application that requires fine tuning. 
+				</p>
+			</div>
+			<div id="state">
+				<h3>Stateless Nature</h3>
+				<p class="words">
+					Building on the theme of simplicity, another key characteristic of AWS Lambda is that the functions are “stateless”. This means that in order for a function to run properly it does not need to rely on any information outside of what it has been provided during invocation. In other words, each invocation of a Lambda function is independent from all others invocations of the same function [12]. Stateful operations, on the other hand, require outside information to provide context and are often more complicated and more difficult to implement. This statelessness is an important trait of Lambda functions because it simplifies the process by which a developer uses the Cloud to execute code. The Cloud is not responsible for providing context to a given function and thus maintains simplicity and typically makes it easier to balance loads, restart failed invocations, and handle errors. It is worth mentioning, though, that stateful operations do provide some advantages. Having state allows individual messages to carry less data and requires the server to do less work establishing an environment [14]. 
+				</p>
+				<p class="words">
+					Furthermore, the stateless nature of AWS Lambda functions is another fundamental reason why it has the ability to scale so well. If Lambda functions were reliant on state, they would not be able to freely execute on different clusters and thus not be able to effectively scale. This is important for the obvious reason of handling variable demands but it is also important in terms of global latency. An extension of AWS Lambda called Lambda@Edge allows a Lambda function to execute on servers geographically closest to the location of invocation which “significantly reduces latency and improves the user experience” (“Customizing Content at the Edge...”). But, again, this seems a little too good to be true, and it is. If a function is unused, it will be removed from its cluster to free up space for other Lambda functions. Now that the function is inactive, meaning not in a container on a cluster, AWS must provision a new container for it on its next invocation. This process of provisioning adds significant response time (potentially more than 5 seconds) to the invocation of an inactive function [16]. Clearly, there is a trade-off here. If the function persisted on a server indefinitely, cold starts would not exist. By using AWS Lambda on a Web application, there is a risk that after the application experiences some downtime, cold starts will affect user experience. 
+				</p>
+				<p class="words">
+					The last thing to note about the stateless nature of Lambda functions is that, in general, stateless operations by themselves are not enough to provide the necessary services in a full-blown Web application. An article written by the inventor of <a href=”https://www.w3schools.com/xml/ajax_intro.asp”>Ajax</a>, Luke Birdeau explains that serverless technologies like AWS Lambda need to remain stateless in order to provide the distinct advantages noted earlier, but cannot do everything we need without some orchestration of state. In the article, Birdeau discusses how Ajax never challenged the statelessness of HTTP but provided a “semi-durable” store within the browser to create a stateful client. In the same vein, Lambda functions must remain stateless to be used properly, but need some notion of state to accomplish some features of Web applications [17]. This leads us to an important concept in that “stateless protocols are often used to support stateful protocols and vice versa” [12]. The stateless nature of AWS Lambda requires that some other technology intervene in order to create the complex Web applications we use everyday. Without state, the possibilities of what an application can do are limited so it is important to note that AWS Lambda must be used in tandem with other technologies in order to provide many features of Web applications. 
+				</p>
+			</div>
+			<div id="soc">
+				<h3>Modularity, Layering, and Separation of Concerns</h3>
+				<p class="words">
+					Moving on in our analysis of using AWS Lambda to build Web applications, let's discuss the principles of modularity, layering, and separation of concerns. Inherently, AWS Lambda forces developers to modularize and layer their code. For the most part, this is an advantage of the technology. All good programmers know that there is value in modularity, layering, and separation of concerns. Modularity and layering are similar, but are not the same. Modularity refers to the idea of separating software into individual components to do one thing well. Layering refers to “the idea that each layer provides a clean abstraction for the next” (Mendelsohn, Modularity and Separation of Concerns). Typically a modular and layered approach allows for developers to share and re-use code, evolve different components separately, and hide complexity [18]. Applying these two concepts to a design creates the idea of separation of concerns; “by enforcing such separation, the chances increase that the solution to each problem can be clearly reasoned about, and modified when necessary” (Mendelsohn, “Cross-Cutting Issues…”). Separation of concerns is seen everywhere in software development. From operating systems, file systems, databases, Web applications and many more, this concept is key to a good design. 
+				</p>
+				<p class="words">
+					AWS Lambda enforces developers to practice this design concept through strict limitations on functions. There are limitations on timeouts (maximum 15 minutes), memory allocation (maximum 10,240 MB), size of environment variables (parameters - maximum 4 KB), deployment packages (code and dependencies - maximum 250 MB) and many more [19]. Due to these limitations, a developer cannot run excessive time or data intense processes using Lambda. While we’ve discussed the benefits of separating concerns, these strict limitations create distinct disadvantages that cannot be avoided. Web applications sometimes need to run time or data intensive processes. With these limitations, Lambda functions may not be able to provide a solution for a task with a single function. It is quite possible that in order to successfully accomplish a task a function will exceed the limitations and thus must be broken up into smaller functions. Excessively modularizing a task can lead to increased overhead and complexity. If a task is particularly “chatty,” meaning that it requires many messages to be sent and received over a network, then the time spent coordinating data in the network becomes relevant and harmful to performance. This hindrance on performance is a common disadvantage of separation of concerns. Furthermore, when the modularization is too fine-grained it can actually complicate the system overall. The drawbacks of these limitations make it clear that AWS Lambda is not a “one-size-fits-all” approach to executing code on the cloud. 
+				</p>
+			</div>
+			<div id="evolve">
+				<h3>Evolution</h3>
+				<p class="words">
+					Another concept to consider when analyzing the use of AWS Lambda for Web applications is its impact on how the system will evolve. Any application that “is used for an extended time is likely to require changes” (Mendelsohn, “Cross-Cutting Issues”). Evolution of a system can be discussed through its compatibility between versions. As a system evolves, different versions are created and these versions might extend, deprecate, or completely remove support for some feature as needed. As a Web application evolves, so will the Lambda functions that run it. System evolution will, for the most part, be straightforward because AWS Lambda forces the system to separate concerns. 
+				</p>
+				<p class="words">
+					A strength of AWS Lambda is its support for function aliasing. Function aliasing allows a developer to build a new version of a function, but still have access to and use the old version [20]. This concept of having different versions of functions available is instrumental for a Web application built using Lambda to evolve effectively because it does not require the entire application to depend on the newest version. With the right logic and foresight, function aliasing makes backwards compatibility between versions of the system almost seamless. Backwards compatibility in the case of Lambda functions means that an invocation of a new version of a function can still execute properly when it is intended for an old version. This flexibility has key advantages during system evolution. The first being that users of the system may rely on old functionality and cannot, or don’t want to, switch to the newest version. Aliasing allows these users to continue to use the system exactly as they have in the past. Whether a user is using an outdated browser lacking some novel capability or there is an external system built on top of the given application, aliasing mitigates the risk of incompatibility. Without aliasing, any change to a function must be integrated into anything that uses it. Another reason is that developers may want to test the new version on a small portion of the application’s traffic before completely migrating to it. AWS Lambda allows developers to route portions of traffic to different aliases as needed [20]. This gives developers the ability to smoothly roll out new versions and fix bugs where needed without affecting the entire population of users. 
+				</p>
+				<p class="words">
+					While AWS Lambda does provide advantages for evolving Web applications, there is a distinct disadvantage of using it. Developers can fall into the trap of vendor lock-in. This trap causes developers to be “dependent (i.e. locked-in) on a single cloud provider's technology implementation and cannot easily move in the future to a different vendor without substantial costs, legal constraints, or technical incompatibilities” (Opara-Martins, Justice, et al, “Critical Analysis of Vendor Lock-in...”). This concept of vendor lock-in applies to any cloud provider. It applies to the specific case of using Lambda because, as we discussed earlier, Lambda cannot provide everything a Web application might need on its own and thus must be used in tandem with other services. For obvious reasons, integrating other AWS services with Lambda is easier than integrating other services from a different provider. This lock-in hinders an application’s ability to evolve because as more AWS services are added, the software becomes developed for AWS specifically and becomes increasingly incompatible with other cloud providers. This makes switching cloud providers challenging because if at some point AWS is no longer the right fit for a service within the application, the barrier to switch to a service from a different provider is high. 
+
+				</p>
+			</div>
+		</div>
+		<div id="conclusion">
+			<h2>Closing Remarks</h2>
+			<div id="takeways">
+				<h3>Important Takeaways</h3>
+				<p class="words">
+					After analyzing the use of a serverless technology like AWS Lambda to build Web applications on the cloud, we can see that there are significant trade-offs. The Lambda technology allows distributed systems to maintain simplicity through its abstraction of the cloud’s infrastructure, ability to scale effectively, stateless nature, and enforced modularized approach. Lambda also provides applications with versioning tools for backwards compatibility and smooth integration. On the other hand Lambda hinders visibility of the applications functionality, often must be used in tandem with other services, has strict limitations on code execution, and can fall victim to vendor lock-in. It is important to remember that container-based and serverless architecture differ fundamentally and are not interchangeable. Each technology has its advantages and disadvantages and must be considered when designing the system.
+				</p>
+			</div>
+			<div id="opinion">
+				<h3>My thoughts on AWS Lambda</h3>
+				<p class="words">
+					From my perspective, as an aspiring Web developer, I believe that AWS Lambda is a great technology for anyone who wants to begin developing Web applications on the cloud. Lambda provides an abstraction to cloud computing that has an extremely low barrier to entry. Lambda makes it simple to run code on the cloud, scale and evolve effectively without requiring upfront costs. Lambda also enforces Web developers to practice good design techniques like separation of concerns and using stateless operations. Many of the drawbacks to using AWS Lambda can be identified early during the design process before writing any code or only come into play once the application has scaled tremendously and needs fine tuning. By no means is AWS Lambda sufficient to build a full scale Web application, but it is a good starting point for any developer that wants to start using cloud computing. 
+				</p>
+			</div>
+		</div>
+		<div id="sources">
+			<h2>Bibliography</h2>
+			<ol>
+				<li>
+					Raman, T.V., and Ashok Malhotra. <cite>Identifying Application State</cite>, W3C, 1 Dec. 2011, <a href="www.w3.org/2001/tag/doc/IdentifyingApplicationState">www.w3.org/2001/tag/doc/IdentifyingApplicationState</a>.
+				</li>
+				<li>
+					Mendelsohn, Noah, <cite>From Documents to Applications</cite>, Presentation to Tufts Course COMP 117 - Internet-scale Distributed Systems, Fall 2020, <a href="https://www.cs.tufts.edu/comp/117/slides/Applications.pdf">https://www.cs.tufts.edu/comp/117/slides/Applications.pdf</a>.
+				</li>
+				<li>
+					<cite>“What Is Cloud Computing?”</cite> What Is Cloud Computing, AWS, <a href="aws.amazon.com/what-is-cloud-computing/">aws.amazon.com/what-is-cloud-computing/</a>. 
+				</li>
+				<li>
+					Carey, Scott. <cite>“AWS vs Azure vs Google Cloud: What's the Best Cloud Platform for Enterprise?”</cite> Computerworld, Computerworld, 23 Jan. 2020, <a href="www.computerworld.com/article/3429365/aws-vs-azure-vs-google-whats-the-best-cloud-platform-for-enterprise.html">www.computerworld.com/article/3429365/aws-vs-azure-vs-google-whats-the-best-cloud-platform-for-enterprise.html. </a>. 
+				</li>
+				<li>
+					M&uuml;ns, Philipp. <cite>“Serverless (FaaS) vs. Containers - When to Pick Which?”</cite> Serverless, Serverless, Inc, <a href="www.serverless.com/blog/serverless-faas-vs-containers">www.serverless.com/blog/serverless-faas-vs-containers</a>. 
+				</li>
+				<li>
+					Iorio, Pablo. <cite>“Container Based Architectures I/III: Technical Advantages.”</cite> Medium, 26 July 2017, <a href="medium.com/@pablo.iorio/container-based-architecture-i-iii-technical-advantages-7176195456c5">medium.com/@pablo.iorio/container-based-architecture-i-iii-technical-advantages-7176195456c5</a>. 
+				</li>
+				<li>
+					<cite>What Is Serverless Computing? | Serverless Definition</cite>. Cloudflare, <a href="www.cloudflare.com/learning/serverless/what-is-serverless/">www.cloudflare.com/learning/serverless/what-is-serverless/</a>. 
+				</li>
+				<li>
+					<cite>What Is FaaS?</cite>. RedHat, <a href="www.redhat.com/en/topics/cloud-native-apps/what-is-faas">www.redhat.com/en/topics/cloud-native-apps/what-is-faas</a>. 
+				</li>
+				<li>
+					Melo, Alysson. <cite>“What Is Function as a Service?”</cite>Back4App Blog, 28 Apr. 2020, <a href="blog.back4app.com/what-is-function-as-a-service/">blog.back4app.com/what-is-function-as-a-service/</a>. 
+				</li>
+				<li>
+					<cite>AWS Lambda - The Ultimate Guide</cite>. Serverless, Inc., <a href="www.serverless.com/aws-lambda">www.serverless.com/aws-lambda</a>. 
+				</li>
+				<li>
+					<cite>“KISS Principle”</cite>. Wikipedia, Wikimedia Foundation, 8 Dec. 2020, <a href="en.wikipedia.org/wiki/KISS_principle">en.wikipedia.org/wiki/KISS_principle</a>. 
+				</li>
+				<li>
+					Mendelsohn, Noah. <cite>“Cross-Cutting Issues*: Principles, Guidelines and Bits of Wisdom”</cite>. Tufts COMP 117: Principles, Guidelines and Bits of Wisdom, <a href="www.cs.tufts.edu/comp/117/principles">www.cs.tufts.edu/comp/117/principles</a>. 
+				</li>
+				<li>
+					<cite>“Cloud Scalability”</cite>. VMware, <a href="www.vmware.com/topics/glossary/content/cloud-scalability">www.vmware.com/topics/glossary/content/cloud-scalability</a>. 
+				</li>
+				<li>
+					Mendelsohn, Noah, <cite>Models of Distributed Computing</cite>, Presentation to Tufts Course COMP 117 - Internet-scale Distributed Systems, Fall 2020, <a href="https://www.cs.tufts.edu/comp/117/slides/Models%20of%20Distributed%20Computing.pdf">https://www.cs.tufts.edu/comp/117/slides/Models%20of%20Distributed%20Computing.pdf</a>.
+				</li>
+				<li>
+					<cite>“Customizing Content at the Edge with Lambda@Edge”</cite>. AWS Documentation, <a href="docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-at-the-edge.html">docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-at-the-edge.html</a>. 
+				</li>
+				<li>
+					Neves, Gon&ccedil;alo. <cite>Keeping Functions Warm - How To Fix AWS Lambda Cold Start Issues</cite>. Serverless, Inc., <a href="www.serverless.com/blog/keep-your-lambdas-warm">www.serverless.com/blog/keep-your-lambdas-warm</a>. 
+				</li>
+				<li>
+					Birdeau, Luke. <cite>“Why Serverless Doesn't Always Mean Stateless”</cite>. Medium, Medium, 14 Mar. 2018, <a href="medium.com/@luke_8635/why-serverless-doesnt-always-mean-stateless-7dda787f58ca">medium.com/@luke_8635/why-serverless-doesnt-always-mean-stateless-7dda787f58ca</a>. 
+				</li>
+				<li>
+					Mendelsohn, Noah, <cite>Modularity and Separation of Concerns</cite>, Presentation to Tufts Course COMP 117 - Internet-scale Distributed Systems, Fall 2020, <a href="https://www.cs.tufts.edu/comp/117/slides/LayeringandSeparationofConcerns.pdf">https://www.cs.tufts.edu/comp/117/slides/LayeringandSeparationofConcerns.pdf</a>.
+				</li>
+				<li>
+					<cite>“Lambda Quotas”</cite>. AWS Documentation, <a href="docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html">docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html</a>. 
+				</li>
+				<li>
+					<cite>“Lambda Function Aliases”</cite>. AWS Documentation, <a href="docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html">docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html</a>. 
+				</li>
+				<li>
+					Opara-Martins, Justice, et al. <cite>“Critical Analysis of Vendor Lock-in and Its Impact on Cloud Computing Migration: a Business Perspective”</cite>. Journal of Cloud Computing, vol. 5, no. 1, 2016, doi:10.1186/s13677-016-0054-z. 
+				</li>
+			</ol>
+		</div>
+	</div>
+
+
+</body>
+
+</html>
